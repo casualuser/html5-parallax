@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>HTML5 Parallax</title>
+<script>
+document.addEventListener("DOMContentLoaded",function(){
+    
+    var pattern;
+    
+    var ParallaxShape = function(zIndex, drawFunc){
+        this.drawFunc = drawFunc;
+        this.zIndex = zIndex;
+        shapes.push(this);
+    }
+    
+    ParallaxShape.prototype = {
+        draw: function(ctx){
+            var mx = mouseX - ctx.canvas.width/2;
+            var my = mouseY - ctx.canvas.height/2;
+            
+            ctx.save();
+            ctx.translate(- mx * this.zIndex * 0.8, - my * this.zIndex * 0.8);
+            ctx.scale(this.zIndex * 2, this.zIndex * 2);
+            this.drawFunc(ctx);
+            ctx.restore();
+        }
+    }
+    
+    var canvas = document.getElementById("canvas");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight
+    var ctx = canvas.getContext("2d");
+    
+    var img = new Image();
+    img.onload = function(){
+        pattern = ctx.createPattern(this, "repeat");
+    }
+    img.src = "nmvl5lm.png";
+    
+    ctx.translate(canvas.width / 2,canvas.height / 2);
+    
+    var shapes = [];
+    var mouseX, mouseY;
+    
+    var shadow = new ParallaxShape(0.4, function(ctx){
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = "black";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.scale(0.8/this.zIndex, 0.8/this.zIndex);
+        ctx.beginPath();
+        ctx.arc(0,0,50,0,Math.PI*2,true);
+        ctx.closePath();
+        ctx.fill();
+    });
+    
+    var background = new ParallaxShape(0.4, function(ctx){
+        ctx.fillStyle = pattern || "transparent";
+        ctx.beginPath();
+        ctx.rect(-2000,-2000,4000,4000);
+        ctx.closePath();
+        ctx.fill();
+    });
+    
+    var cricle = new ParallaxShape(0.8, function(ctx){
+        ctx.lineWidth = 4;
+        ctx.fillStyle = "rgb(0,192,255)";
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
+        ctx.arc(0,0,50,0,Math.PI*2,true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    });
+    
+    function drawScene(){
+        ctx.save();
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+        ctx.restore();
+        
+        var shapesUnsorted = Array.prototype.slice.call(shapes);
+        var shapesSorted = [];
+        
+        while(shapesUnsorted.length){
+            var maxZIndex = null, maxShape = null;
+            for(var i=0;i<shapesUnsorted.length;i++){
+                if(maxZIndex == null) maxZIndex = shapesUnsorted[i].zIndex;
+                if(maxShape == null) maxShape = shapesUnsorted[i];
+                
+                if(shapesUnsorted[i].zIndex > maxZIndex){
+                    maxZIndex = shapesUnsorted[i].zIndex;
+                    maxShape = shapesUnsorted[i];
+                }
+            }
+            shapesUnsorted.splice(shapesUnsorted.indexOf(maxShape),1);
+            shapesSorted.unshift(maxShape);
+        }
+        
+        for(var i=0;i<shapesSorted.length;i++){
+            shapesSorted[i].draw(ctx);
+        }
+    }
+    
+    canvas.addEventListener("mousemove",function(e){
+        mouseX = e.clientX - canvas.getBoundingClientRect().left;
+        mouseY = e.clientY - canvas.getBoundingClientRect().top;
+        drawScene();
+    });
+    
+});
+</script>
+<style>
+    body, html {
+        padding:0;
+        margin:0;
+    }
+    body canvas {
+        width:100%;
+        height:100%;
+        position:fixed;
+    }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="640" height="480"></canvas>
+</body>
+</html>
